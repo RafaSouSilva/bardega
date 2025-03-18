@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bardega - Plataforma de Compra de Cerveja</title>
+    
+    <!-- jQuery primeiro -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- jQuery Mask depois do jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    
+    <!-- Bootstrap e outros recursos depois -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+        .info-icon {
+            color: #6c757d;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 14px;
+        }
+        .beer-option {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+        .beer-option img {
+            height: 30px;
+            margin-right: 10px;
+        }
+        .pack-option {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+        .pack-option img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .cart-item-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-right: 15px;
+        }
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .select-header {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .select-option {
+            padding: 8px;
+            cursor: pointer;
+        }
+        
+        .select-option:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de Navegação Simplificada -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Bardega</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="fale-conosco.html">Fale Conosco</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        
+        <div class="row">
+            <!-- Coluna da Esquerda - Adicionar Cerveja -->
+            <div class="col-md-6">
+                <div class="card">
+                    <h2>Adicionar Cerveja ao Carrinho</h2>
+                    <form id="beerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Cerveja</label>
+                            <div class="custom-select-wrapper" id="beerSelectWrapper">
+                                <div class="select-header" id="beerHeader">
+                                    <span>Selecione a cerveja</span>
+                                </div>
+                                <div class="select-options" id="beerOptions"></div>
+                                <input type="hidden" id="beerSelect" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Embalagem</label>
+                            <div class="custom-select-wrapper" id="packSelectWrapper">
+                                <div class="select-header" id="packHeader">
+                                    <span>Selecione a embalagem</span>
+                                </div>
+                                <div class="select-options" id="packOptions"></div>
+                                <input type="hidden" id="packSelect" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Preço do Pack</label>
+                            <input type="number" id="packPrice" class="form-control" step="0.01" min="0" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Quantidade de Packs</label>
+                            <input type="number" id="packQuantity" class="form-control" value="1" min="1" required>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" onclick="addToCart()">Adicionar ao Carrinho</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Coluna da Direita - Carrinho e Checkout -->
+            <div class="col-md-6">
+                <div class="card">
+                    <h2>Seu Carrinho</h2>
+                    <ul id="cartList" class="list-group mb-3"></ul>
+                    <h3>Total: R$ <span id="totalPrice">0,00</span></h3>
+                </div>
+
+                <div class="card">
+                    <h2>Checkout</h2>
+                    <form id="checkoutForm" onsubmit="return validateCheckout()">
+                        <div class="mb-3">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" id="fullName" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nome da Adega</label>
+                            <input type="text" id="storeName" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Endereço</label>
+                            <input type="text" id="address" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Telefone (WhatsApp)</label>
+                            <input type="text" id="phone" class="form-control phone-mask" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="emailCliente" required>
+                        </div>
+
+                        <button type="button" class="btn btn-success" onclick="submitForm()">Finalizar Pedido</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão para abrir o modal -->
+        <div class="text-center mb-4">
+            <button class="btn btn-outline-primary bg-primary text-white" data-bs-toggle="modal" data-bs-target="#novaCervejaModal">
+                Adicionar outros produtos: Gim, Whisky....
+            </button>
+        </div>
+
+        <!-- Modal de Solicitação -->
+        <div class="modal fade" id="novaCervejaModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Solicitar Produto:</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="novaCervejaForm">
+                            <div class="mb-3">
+                                <label class="form-label">Produtos</label>
+                                <input type="text" class="form-control" id="marcaCerveja" placeholder=" Exemplo:Whisky Jack Daniels" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Embalagem</label>
+                                <select class="form-control" id="tipoEmbalagem" required>
+                                    <option value="" disabled selected>Selecione uma embalagem</option>
+                                    <option value="litro">Litro</option>
+                                    <option value="lata">Lata</option>
+                                    <option value="long neck">Long Neck</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Preço Unidade (R$)</label>
+                                <input type="number" class="form-control" id="precoPack" required min="0" step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Quantidade </label>
+                                <input type="number" class="form-control" id="qtdUnidades" required min="1">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="button" class="btn btn-primary" onclick="adicionarAoCarrinho(); document.getElementById('novaCervejaForm').reset();">Enviar Solicitação</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+    <script>
+        const deployUrl = 'https://script.google.com/macros/s/AKfycbz7WH3Ue5LVRogG3-uPpaJavufVmkUPfDM7PeUyoq42XKzv_Bge-hynpTGulAaUDfPo/exec';
+        
+        // Função para testar a conexão
+        function testarConexaoAPI() {
+            console.log("Testando conexão com:", deployUrl);
+            fetch(deployUrl, {
+                method: 'GET',
+                mode: 'no-cors'
+            })
+            .then(response => {
+                console.log("Conexão bem sucedida:", response);
+            })
+            .catch(error => {
+                console.error("Erro na conexão:", error);
+            });
+        }
+
+        // Chama a função de teste quando a página carrega
+        window.onload = testarConexaoAPI;
+
+        let cart = [];
+      
+
+        // Função para validar o formulário
+        function validateForm() {
+            const beerName = document.getElementById('beerSelect').value;
+            const packType = document.getElementById('packSelect').value;
+            const price = document.getElementById('packPrice').value;
+            const quantity = document.getElementById('packQuantity').value;
+
+            return beerName && packType && price && quantity;
+        }
+
+        // Função modificada para adicionar ao carrinho
+        function addToCart() {
+            const beerSelect = document.getElementById('beerSelect');
+            const packSelect = document.getElementById('packSelect');
+            const packPrice = document.getElementById('packPrice');
+            const packQuantity = document.getElementById('packQuantity');
+
+            if (!beerSelect.value || !packSelect.value || !packPrice.value || !packQuantity.value) {
+                alert('Por favor, preencha todos os campos');
+                return;
+            }
+
+            const beerName = beerSelect.value;
+            const packType = packSelect.value;
+            const price = parseFloat(packPrice.value);
+            const quantity = parseInt(packQuantity.value);
+            const imageUrl = cervejasCatalogo[beerName].variants[packType].imagem;
+            const logoUrl = cervejasCatalogo[beerName].logo;
+            const totalItemPrice = price * quantity;
+
+            cart.push({
+                name: beerName,
+                packType,
+                price,
+                quantity,
+                totalItemPrice,
+                imageUrl,
+                logoUrl
+            });
+
+            updateCart();
+            
+            // Resetar campos
+            packPrice.value = '';
+            packQuantity.value = '1';
+            beerSelect.value = '';
+            packSelect.value = '';
+            document.getElementById('beerHeader').innerHTML = '<span>Selecione a cerveja</span>';
+            document.getElementById('packHeader').innerHTML = '<span>Selecione a embalagem</span>';
+        }
+        
+        function updateCart() {
+            let cartList = document.getElementById('cartList');
+            let totalPrice = 0;
+            cartList.innerHTML = '';
+            
+            cart.forEach((item, index) => {
+                totalPrice += item.totalItemPrice;
+                
+                const itemHtml = `
+                    <li class='list-group-item'>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex gap-3">
+                                <div class="d-flex align-items-center" style="min-width: 80px;">
+                                    <img src="${item.imageUrl}" alt="${item.packType}" 
+                                         style="height: 80px; object-fit: contain;">
+                                </div>
+                                <div>
+                                    <div class="mb-1">
+                                        ${item.name} - ${item.packType}
+                                    </div>
+                                    <div class="text-muted small">
+                                        R$ ${item.price.toFixed(2)}
+                                    </div>
+                                    <div class="text-muted small d-flex align-items-center">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" onclick="updateQuantity(${index}, -1)">-</button>
+                                        ${item.quantity} ${item.quantity > 1 ? 'Packs' : 'Pack'}
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="updateQuantity(${index}, 1)">+</button>
+                                    </div>
+                                    <div class="fw-bold">
+                                        Total: R$ ${item.totalItemPrice.toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">
+                                Remover
+                            </button>
+                        </div>
+                    </li>`;
+                
+                cartList.innerHTML += itemHtml;
+            });
+            
+            document.getElementById('totalPrice').innerText = totalPrice.toFixed(2);
+        }
+        
+        function updateQuantity(index, change) {
+            const item = cart[index];
+            const newQuantity = item.quantity + change;
+            
+            if (newQuantity < 1) return;
+            
+            item.quantity = newQuantity;
+            item.totalItemPrice = item.price * item.quantity;
+            
+            updateCart();
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        // Inicialização da máscara de telefone
+        $(document).ready(function() {
+            $('.phone-mask').mask('00 00000-0000');
+        });
+
+        function submitForm() {
+            if (!validateCheckout()) {
+                return;
+            }
+
+            const phoneInput = document.getElementById('phone');
+            const phoneNumber = phoneInput.value.replace(/\D/g, '');
+
+            const userData = {
+                fullName: document.getElementById('fullName').value,
+                storeName: document.getElementById('storeName').value,
+                address: document.getElementById('address').value,
+                phone: phoneNumber,
+                email: document.getElementById('emailCliente').value
+            };
+
+            const totalPrice = cart.reduce((total, item) => total + item.totalItemPrice, 0);
+
+            const data = {
+                userData: userData,
+                cartItems: cart,
+                totalPrice: totalPrice
+            };
+
+            // Mostrar mensagem imediatamente
+            alert('Pedido enviado com sucesso!');
+            cart = [];
+            updateCart();
+            document.getElementById('checkoutForm').reset();
+
+            // Enviar dados em segundo plano
+            fetch(deployUrl, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .catch(error => {
+                console.error('Erro no envio:', error);
+            });
+        }
+
+        // Função de validação do formulário
+        function validateCheckout() {
+            const fullName = document.getElementById('fullName').value;
+            const storeName = document.getElementById('storeName').value;
+            const address = document.getElementById('address').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('emailCliente').value;
+
+            if (!fullName || !storeName || !address || !phone || !email) {
+                alert('Por favor, preencha todos os campos do formulário.');
+                return false;
+            }
+
+            if (phone.replace(/\D/g, '').length !== 11) {
+                alert('Por favor, insira um número de telefone válido com 11 dígitos.');
+                return false;
+            }
+
+            if (cart.length === 0) {
+                alert('Por favor, adicione pelo menos um item ao carrinho.');
+                return false;
+            }
+
+            return true;
+        }
+
+        const cervejasCatalogo = {
+            'Amstel': {
+                variants: {
+                    'Lata 269ml (12 unidades)': {
+                        imagem: './assets/amstel.jpeg'
+                    },
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/amstel.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/amstel.jpeg'
+                    }
+                }
+            },
+            'Antarctica': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/antarctica.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/antarctica.jpeg'
+                    }
+                }
+            },
+            'Bohemia': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/bohemia.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/bohemia.jpeg'
+                    },
+                    'Long Neck 355ml (6 unidades)': {
+                        imagem: './assets/bohemia_longneck.jpeg'
+                    }
+                }
+            },
+            'Brahma': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/brahma.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/brahma.jpeg'
+                    },
+                    'Duplo Malte 350ml (12 unidades)': {
+                        imagem: './assets/brahmaduplomalte.jpeg'
+                    },
+                    'Duplo Malte 473ml (12 unidades)': {
+                        imagem: './assets/brahmaduplomalte.jpeg'
+                    }
+                }
+            },
+            'Budweiser': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/budweiser.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/budweiser.jpeg'
+                    },
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/budweiserlong.jpeg'
+                    }
+                }
+            },
+            'Corona': {
+                variants: {
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/coronalong.jpeg'
+                    },
+                    'Lata 350ml (8 unidades)': {
+                        imagem: './assets/coronalata.jpeg'
+                    }
+                }
+            },
+            'Eisenbahn': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/eisenbahn/350ml.png'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/produtos/eisenbahn/473ml.png'
+                    },
+                    'Long Neck 355ml (6 unidades)': {
+                        imagem: './assets/produtos/eisenbahn/long-neck.png'
+                    }
+                }
+            },
+            'Heineken': {
+                variants: {
+                    'Lata 250ml (12 unidades)': {
+                        imagem: './assets/heineken.jpeg'
+                    },
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/heineken.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/heineken.jpeg'
+                    },
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/heinekenlong.jpeg'
+                    }
+                }
+            },
+            'Itaipava': {
+                variants: {
+                    'Lata 269ml (12 unidades)': {
+                        imagem: './assets/itaipava.jpeg'
+                    },
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/itaipava.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/itaipava.jpeg'
+                    }
+                }
+            },
+            'Kaiser': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/kaiser/350ml.png'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/produtos/kaiser/473ml.png'
+                    }
+                }
+            },
+            'Original': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/original.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/original.jpeg'
+                    },
+                    
+                }
+            },
+            'Petra': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/petra.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/petra.jpeg'
+                    }
+                }
+            },
+            'Skol': {
+                variants: {
+                    'Lata 269ml (12 unidades)': {
+                        imagem: './assets/produtos/skol/269ml.png'
+                    },
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/skol/350ml.png'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/produtos/skol/473ml.png'
+                    },
+                    'Puro Malte 350ml (12 unidades)': {
+                        imagem: './assets/produtos/skol/puro-malte-350ml.png'
+                    }
+                }
+            },
+            'Spaten': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/spaten.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/spaten.jpeg'
+                    },
+                    'Long Neck 355ml (6 unidades)': {
+                        imagem: './assets/spatenlong.jpeg'
+                    }
+                }
+            },
+            'Stella Artois': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/stela.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/stela.jpeg'
+                    },
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/stelalong.jpeg'
+                    }
+                }
+            },
+            'Becks': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/becks/350ml.png'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/produtos/becks/473ml.png'
+                    },
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/produtos/becks/long-neck.png'
+                    }
+                }
+            },
+            'Colorado': {
+                variants: {
+                    'Appia 600ml (12 unidades)': {
+                        imagem: './assets/produtos/colorado/appia-600ml.png'
+                    },
+                    'Indica 600ml (12 unidades)': {
+                        imagem: './assets/produtos/colorado/indica-600ml.png'
+                    },
+                    'Ribeirão Lager 350ml (12 unidades)': {
+                        imagem: './assets/produtos/colorado/ribeirao-350ml.png'
+                    }
+                }
+            },
+            'Império': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/imperio.jpeg'
+                    },
+                    'Lata 473ml (12 unidades)': {
+                        imagem: './assets/imperio.jpeg'
+                    }
+                }
+            },
+            'Patagonia': {
+                variants: {
+                    'Amber Lager 355ml (6 unidades)': {
+                        imagem: './assets/produtos/patagonia/amber-lager.png'
+                    },
+                    'Bohemian Pilsener 355ml (6 unidades)': {
+                        imagem: './assets/produtos/patagonia/bohemian-pilsener.png'
+                    }
+                }
+            },
+            'Hoegaarden': {
+                variants: {
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/produtos/hoegaarden/long-neck.png'
+                    }
+                }
+            },
+            'Brahma Zero': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/brahma-zero/350ml.png'
+                    }
+                }
+            },
+            'Heineken Zero': {
+                variants: {
+                    'Lata 350ml (12 unidades)': {
+                        imagem: './assets/produtos/heineken-zero/350ml.png'
+                    },
+                    'Long Neck 330ml (6 unidades)': {
+                        imagem: './assets/produtos/heineken-zero/long-neck.png'
+                    }
+                }
+            }
+        };
+
+        // Inicializar os selects customizados
+        function initializeCustomSelects() {
+            const beerWrapper = document.getElementById('beerSelectWrapper');
+            const beerHeader = document.getElementById('beerHeader');
+            const beerOptions = document.getElementById('beerOptions');
+            
+            // Preencher opções de cerveja - removendo as imagens
+            Object.keys(cervejasCatalogo).sort().forEach(cerveja => {
+                const option = document.createElement('div');
+                option.className = 'select-option';
+                option.innerHTML = `<span>${cerveja}</span>`;
+                option.onclick = () => selectBeer(cerveja);
+                beerOptions.appendChild(option);
+            });
+
+            // Toggle do select de cerveja
+            beerHeader.onclick = () => {
+                beerOptions.style.display = beerOptions.style.display === 'block' ? 'none' : 'block';
+            };
+
+            // Fechar os selects quando clicar fora
+            document.addEventListener('click', (e) => {
+                if (!beerWrapper.contains(e.target)) {
+                    beerOptions.style.display = 'none';
+                }
+            });
+        }
+
+        function selectBeer(cerveja) {
+            const beerHeader = document.getElementById('beerHeader');
+            const beerOptions = document.getElementById('beerOptions');
+            const beerSelect = document.getElementById('beerSelect');
+            
+            // Simplificando para mostrar apenas o nome da cerveja
+            beerHeader.innerHTML = `<span>${cerveja}</span>`;
+            beerSelect.value = cerveja;
+            beerOptions.style.display = 'none';
+            
+            updatePackOptions(cerveja);
+        }
+
+        function updatePackOptions(cerveja) {
+            const packWrapper = document.getElementById('packSelectWrapper');
+            const packHeader = document.getElementById('packHeader');
+            const packOptions = document.getElementById('packOptions');
+            const packSelect = document.getElementById('packSelect');
+
+            packHeader.innerHTML = '<span>Selecione a embalagem</span>';
+            packSelect.value = '';
+            packOptions.innerHTML = '';
+
+            Object.keys(cervejasCatalogo[cerveja].variants).forEach(pack => {
+                const option = document.createElement('div');
+                option.className = 'pack-option';
+                const imageUrl = cervejasCatalogo[cerveja].variants[pack].imagem;
+                option.innerHTML = `
+                    <img src="${imageUrl}" alt="${pack}">
+                    <span>${pack}</span>
+                `;
+                option.onclick = () => selectPack(cerveja, pack);
+                packOptions.appendChild(option);
+            });
+
+            packHeader.onclick = () => {
+                packOptions.style.display = packOptions.style.display === 'block' ? 'none' : 'block';
+            };
+        }
+
+        function selectPack(cerveja, pack) {
+            const packHeader = document.getElementById('packHeader');
+            const packOptions = document.getElementById('packOptions');
+            const packSelect = document.getElementById('packSelect');
+
+            packHeader.innerHTML = `<span>${pack}</span>`;
+            packSelect.value = pack;
+            packOptions.style.display = 'none';
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', initializeCustomSelects);
+
+        // Mostrar campo "Outro" quando selecionado
+        document.getElementById('tipoEmbalagem').addEventListener('change', function() {
+            const outroTipoDiv = document.getElementById('outroTipoDiv');
+            outroTipoDiv.style.display = this.value === 'Outro' ? 'block' : 'none';
+        });
+
+        function adicionarAoCarrinho() {
+            const marca = document.getElementById('marcaCerveja').value;
+            const embalagem = document.getElementById('tipoEmbalagem').value;
+            const preco = parseFloat(document.getElementById('precoPack').value);
+            const quantidade = parseInt(document.getElementById('qtdUnidades').value);
+
+            if (!marca || !embalagem || isNaN(preco) || isNaN(quantidade)) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+
+            const totalItemPrice = preco * quantidade;
+            const imageUrl = ''; // Adicione a lógica para obter a imagem, se necessário
+            const logoUrl = ''; // Adicione a lógica para obter o logo, se necessário
+
+            cart.push({
+                name: marca,
+                packType: embalagem,
+                price: preco,
+                quantity: quantidade,
+                totalItemPrice,
+                imageUrl,
+                logoUrl
+            });
+
+            updateCart();
+            
+            // Resetar campos do formulário
+            document.getElementById('novaCervejaForm').reset();
+            alert('Produto adicionado ao carrinho com sucesso!');
+            $('#novaCervejaModal').modal('hide');
+        }
+    </script>
+
+    <!-- Script do Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Inicializar todos os tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        });
+    </script>
+</body>
+</html>
